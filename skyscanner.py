@@ -1,115 +1,86 @@
 import pandas as pd
 import requests
+from typing import Union
 
-def get_config() -> pd.DataFrame:
-    """ Skyscanner configurations
+class SkyScannerAPI:
+    """ class wrapped around Skyscanner API
     """
-    url = "https://skyscanner80.p.rapidapi.com/api/v1/get-config"
+    def __init__(self, API_KEY):
+        self.api_key = API_KEY
 
-    headers = {
-        "x-rapidapi-key": "1cddf2f72cmsh326dd619b4969bap1f2cd3jsn4f2dd0f86530",
-        "x-rapidapi-host": "skyscanner80.p.rapidapi.com"
-    }
+    def builder(self, endpoints, querystring: dict[str, Union[str, any]] = {}):
+        """
+        """
+        # base url
+        url = f"https://flights-sky.p.rapidapi.com/{endpoints}"
+        headers = {
+            "x-rapidapi-key": self.api_key,
+            "x-rapidapi-host": "flights-sky.p.rapidapi.com"
+        }
 
-    response = requests.get(url, headers=headers)
-    res = pd.DataFrame(response.json()['data'])
-    return res.sort_values(by='country').reset_index(drop=True)
+        response = requests.get(url, headers=headers, params=querystring)
+        return response
 
-configs = get_config()
+    def config(self) -> pd.DataFrame:
+        response = self.builder("get-config")
+        res = pd.DataFrame(response.json()['data'])
+        return res.sort_values(by='country').reset_index(drop=True)
 
-def get_airports_by_location(location_name: str) -> pd.DataFrame:
-    """ airports by location
-    """
-    url = "https://skyscanner80.p.rapidapi.com/api/v1/flights/auto-complete"
+    def get_airports(self):
+        # background-color: rgb(50,50,50);
+        raise NotImplemented
 
-    querystring = {
-        "query": location_name,
-        "market": "UK",
-        "locale": "en-GBP"}
+    def get_roundtrip(self, from_id, to_id, depart_dt, return_dt, cabin) -> pd.DataFrame:
+        # parameters
+        querystring = {
+            "fromEntityId": from_id,
+            "toEntityId": to_id,
+            "departDate": depart_dt,
+            "returnDate": return_dt,
+            "adults": "1",
+            "cabinClass": cabin,
+            "currency": "GBP",
+            "market": "UK",
+            "locale": "en-GB"}
 
-    headers = {
-        "x-rapidapi-key": "1cddf2f72cmsh326dd619b4969bap1f2cd3jsn4f2dd0f86530",
-        "x-rapidapi-host": "skyscanner80.p.rapidapi.com"
-    }
+        response = self.builder('flights/search-roundtrip', querystring)
+        data = response.json()['data']
 
-    response = requests.get(url, headers=headers, params=querystring)
-    data = response.json()['data']
-    res = []
-    for k in range(len(data)):
-        res.append(
+        # format data
+        retours = data['itineraries']
+        res = []
+        for k in range(len(retours)):
+            res.append(
+                [
+                    retours[k]['price']['raw'],
+
+                    # first leg
+                    retours[k]['legs'][0]['origin']['name'],
+                    retours[k]['legs'][0]['destination']['name'],
+                    retours[k]['legs'][0]['departure'],
+                    retours[k]['legs'][0]['arrival'],
+                    retours[k]['legs'][0]['durationInMinutes'],
+                    len(retours[k]['legs'][0]['segments'])-1,
+                    retours[k]['legs'][0]['carriers']['marketing'][0]['name'],
+
+                    # second leg
+                    retours[k]['legs'][1]['origin']['name'],
+                    retours[k]['legs'][1]['destination']['name'],
+                    retours[k]['legs'][1]['departure'],
+                    retours[k]['legs'][1]['arrival'],
+                    retours[k]['legs'][1]['durationInMinutes'],
+                    len(retours[k]['legs'][1]['segments'])-1,
+                    retours[k]['legs'][1]['carriers']['marketing'][0]['name'],
+                ]
+            )
+
+        res = pd.DataFrame(
+            res,
+            columns=
             [
-                data[k]['id'],
-                data[k]['presentation']['title'],
-                data[k]['presentation']['suggestionTitle']
-            ]
-        )
-    return pd.DataFrame(res, columns=['id', 'title', 'suggestionTitle'])
+                'raw_price', '1_airport', '1_destination', '1_departure', '1_arrival', '1_duration',
+                '1_stops', '1_airline', '2_airport', '2_destination', '2_departure', '2_arrival', '2_duration',
+                '2_stops', '2_airline'
+            ])
 
-def get_roundtrip(from_id: str, to_id: str, depart_dt: str,  return_dt: str, cabin_class: str) -> pd.DataFrame:
-
-    url = "https://skyscanner80.p.rapidapi.com/api/v1/flights/search-roundtrip"
-
-    querystring = {
-        "fromId": from_id,
-        "toId": to_id,
-        "departDate": depart_dt,
-        "returnDate": return_dt,
-        "adults": "1",
-        "cabinClass": cabin_class,
-        "currency": "USD",
-        "market": "US",
-        "locale": "en-US"}
-
-    headers = {
-        "x-rapidapi-key": "1cddf2f72cmsh326dd619b4969bap1f2cd3jsn4f2dd0f86530",
-        "x-rapidapi-host": "skyscanner80.p.rapidapi.com"
-    }
-
-    response = requests.get(url, headers=headers, params=querystring)
-    data = response.json()['data']
-    retours = data['itineraries']
-    res = []
-    for k in range(len(retours)):
-        res.append(
-            [
-                retours[k]['id'],
-                retours[k]['price']['raw'],
-
-                # first leg
-                retours[k]['legs'][0]['origin']['name'],
-                retours[k]['legs'][0]['destination']['name'],
-                retours[k]['legs'][0]['departure'],
-                retours[k]['legs'][0]['arrival'],
-                retours[k]['legs'][0]['durationInMinutes'],
-                retours[k]['legs'][0]['carriers']['marketing'][0]['name'],
-
-                # second leg
-                retours[k]['legs'][1]['origin']['name'],
-                retours[k]['legs'][1]['destination']['name'],
-                retours[k]['legs'][1]['departure'],
-                retours[k]['legs'][1]['arrival'],
-                retours[k]['legs'][1]['durationInMinutes'],
-                retours[k]['legs'][1]['carriers']['marketing'][0]['name'],
-            ]
-        )
-
-    res = pd.DataFrame(
-        res,
-        columns=
-        [
-            'id', 'raw_price', '1_airport', '1_destination', '1_departure', '1_arrival', '1_duration',
-            '1_airline', '2_airport', '2_destination', '2_departure', '2_arrival', '2_duration',
-            '2_airline'
-        ])
-    return res.sort_values(by='raw_price', ascending=True)
-
-# example
-get_roundtrip(
-    "eyJzIjoiTE9ORCIsImUiOiIyNzU0NDAwOCIsImgiOiIyNzU0NDAwOCJ9",
-    "eyJzIjoiSEtUIiwiZSI6IjEwNDEyMDM3OCIsImgiOiIyNzU0MjA2OSJ9",
-    "2024-12-10",
-    '2024-12-21',
-    "economy"
-).to_csv(
-    r'trips_London_to_Thailand.csv', index=None
-)
+        return res.sort_values(by='raw_price', ascending=True)
