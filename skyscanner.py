@@ -3,7 +3,7 @@ import requests
 from typing import Union
 
 class SkyScannerAPI:
-    """ class wrapped around Skyscanner API
+    """ class to implement Skyscanner API requests
     """
     def __init__(self, API_KEY):
         self.api_key = API_KEY
@@ -27,7 +27,6 @@ class SkyScannerAPI:
         return res.sort_values(by='country').reset_index(drop=True)
 
     def get_airports(self):
-        # background-color: rgb(50,50,50);
         raise NotImplemented
 
     def get_roundtrip(self, from_id, to_id, depart_dt, return_dt, cabin) -> pd.DataFrame:
