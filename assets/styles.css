@@ -1,0 +1,38 @@
+.main-header{
+    font-weight: bold,
+    padding-left: 20px
+    padding-top: 10px
+}
+
+.DateRangePickerInput__withBorder {
+  font-family: "Helvetica Neue", sans-serif;
+  background-color: #fff;
+  border-radius: 1px;
+  border: 1px solid #ccc;
+  color: #333;
+  display: table;
+  border-spacing: 0;
+  border-collapse: separate;
+  height: 36px;
+  overflow: hidden;
+  box-shadow: 0 3px 3px rgba(0,0,0,0.2);
+  width:100%;
+  text-align: left;
+}
+
+.DateInput_input, .DateInput_input_1 {
+  font-family: "Helvetica Neue";
+  text-align: center;
+  Height: 45px !important;
+  Width: 100% !important;
+  padding-left: 3px !important;
+  padding-right: 3px !important;
+  font-size: 0.9em;
+  color: #333 !important;
+}
+
+.Select-placeholder, .Select-arrow-zone, .Select-input, .Select-value-label, .Select-clear-zone {
+    font-family: "Helvetica Neue";
+    margin: auto;
+    line-height: dropdown_height;
+}
