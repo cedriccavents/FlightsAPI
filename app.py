@@ -19,7 +19,8 @@ app = Dash(
 )
 
 # static data
-airports = pd.read_csv(r'airport_ids.csv')
+airports = pd.read_csv(r'airport_ids.txt', sep=';', header=None)
+airports.columns = ['location', 'id', 'title', 'suggestionTitle']
 airports_dict = dict(zip(airports['location'], airports['id']))
 airports_id = dict(zip(airports['title'], airports['id']))
 
@@ -363,7 +364,6 @@ def find_all_roundtrips(*args):
     ctx = dash.callback_context
     if ctx.triggered:
         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-        print(button_id)
         if button_id == 'run-button':
             for destination in destinations:
                 try:
